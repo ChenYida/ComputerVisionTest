@@ -1,0 +1,7 @@
+*.suo
+*.pdb
+ExcelMaker/ExcelMaker/bin/Debug/
+ExcelMaker/ExcelMaker/obj/Debug/
+ExcelMaker/ExcelMaker/bin/Release/
+ExcelMaker/ExcelMaker/obj/Release/
+ExcelMaker/.vs
