@@ -10,7 +10,11 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 
 namespace ComputerVisionTest
 {
@@ -64,6 +68,7 @@ namespace ComputerVisionTest
 
         private async void AnalyzeImage()
         {
+            Tb1.Text = string.Empty;
             var computerVision = new ComputerVisionClient(new ApiKeyServiceClientCredentials(ComputerVisionSubscriptionKey));
             computerVision.Endpoint = "https://chinaeast2.api.cognitive.azure.cn/";
             await AnalyzeLocalAsync(computerVision, ImagePathList[_currentIndex]);
@@ -92,28 +97,38 @@ namespace ComputerVisionTest
 
         private async void MakeAnalysisRequest()
         {
+            ClearMarkersOnImage();
+
             var client = new HttpClient();
             client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", FaceSubscriptionKey);
 
             string queryString = "returnFaceId=true&returnFaceLandmarks=false&returnFaceAttributes=age,gender";
             string uri = "https://chinaeast2.api.cognitive.azure.cn/face/v1.0/detect?" + queryString;
 
-            HttpResponseMessage response;
             string responseContent;
 
             byte[] byteData = GetImageAsByteArray(ImagePathList[_currentIndex]);
 
             using (var content = new ByteArrayContent(byteData))
             {
-                // This example uses content type "application/octet-stream".
-                // The other content types you can use are "application/json" and "multipart/form-data".
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                response = await client.PostAsync(uri, content);
+                var response = await client.PostAsync(uri, content);
                 responseContent = response.Content.ReadAsStringAsync().Result;
             }
-            var jsonResponse = responseContent.Substring(1, responseContent.Length - 2);
-            TbJson.Text = jsonResponse;
-            var data = (JObject)JsonConvert.DeserializeObject(jsonResponse);
+            var jArray = (JArray)JsonConvert.DeserializeObject(responseContent);
+            AddMarkersOnImage(jArray);
+        }
+
+        private void ClearMarkersOnImage()
+        {
+            foreach (var rectangle in CanvasRoot.Children.OfType<Rectangle>().ToList())
+            {
+                CanvasRoot.Children.Remove(rectangle);
+            }
+            foreach (var textblock in CanvasRoot.Children.OfType<TextBlock>().ToList())
+            {
+                CanvasRoot.Children.Remove(textblock);
+            }
         }
 
         private static byte[] GetImageAsByteArray(string imageFilePath)
@@ -121,6 +136,61 @@ namespace ComputerVisionTest
             FileStream fileStream = new FileStream(imageFilePath, FileMode.Open, FileAccess.Read);
             BinaryReader binaryReader = new BinaryReader(fileStream);
             return binaryReader.ReadBytes((int)fileStream.Length);
+        }
+
+        private void AddMarkersOnImage(JArray jArray)
+        {
+            foreach (var obj in jArray)
+            {
+                var jObject = obj as JObject;
+                var rectangle = new Rectangle();
+                Canvas.SetLeft(rectangle, (int)jObject["faceRectangle"]["left"]);
+                Canvas.SetTop(rectangle, (int)jObject["faceRectangle"]["top"]);
+                rectangle.Width = (int)jObject["faceRectangle"]["width"];
+                rectangle.Height = (int)jObject["faceRectangle"]["height"];
+                rectangle.Stroke = new SolidColorBrush { Color = Colors.DeepSkyBlue };
+                rectangle.StrokeThickness = 8;
+                CanvasRoot.Children.Add(rectangle);
+                var textblock = new TextBlock();
+                textblock.Text = string.Format("Age:{0}\nGender:{1}", (string)jObject["faceAttributes"]["age"],
+                    (string)jObject["faceAttributes"]["gender"]);
+                Canvas.SetLeft(textblock, (int)jObject["faceRectangle"]["left"]);
+                Canvas.SetTop(textblock, (int)jObject["faceRectangle"]["top"] + (int)jObject["faceRectangle"]["height"] + 10);
+                CanvasRoot.Children.Add(textblock);
+            }
+        }
+
+        private void OnMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            var element = sender as UIElement;
+            var position = e.GetPosition(element);
+            var transform = element.RenderTransform as MatrixTransform;
+            var matrix = transform.Matrix;
+            var scale = e.Delta >= 0 ? 1.05 : 1.0 / 1.05;
+            matrix.ScaleAtPrepend(scale, scale, position.X, position.Y);
+            transform.Matrix = matrix;
+        }
+
+        private Point _mouseDownPoint;
+
+        private void OnMouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.RightButton == MouseButtonState.Pressed)
+            {
+                var transform = ((UIElement)sender).RenderTransform as MatrixTransform;
+                var mouse = transform.Inverse.Transform(e.GetPosition(this));
+                var delta = Point.Subtract(mouse, _mouseDownPoint); // delta from old mouse to current mouse
+                var translate = new TranslateTransform(delta.X, delta.Y);
+                transform.Matrix = translate.Value * transform.Matrix;
+                ((UIElement)sender).RenderTransform = transform;
+                e.Handled = true;
+            }
+        }
+
+        private void OnMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            var transform = ((UIElement)sender).RenderTransform as MatrixTransform;
+            _mouseDownPoint = transform.Inverse.Transform(e.GetPosition(this));
         }
     }
 }
