@@ -23,8 +23,8 @@ namespace ComputerVisionTest
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const string ComputerVisionSubscriptionKey = "a2ed2142c80e45d49f437dee30cf9a7a";
-        private const string FaceSubscriptionKey = "060c030588f04f9387d17f0ce518cdf3";
+        private const string ComputerVisionSubscriptionKey = "efd6e3afc73a4a16aefd3b3a52369e03";
+        private const string FaceSubscriptionKey = "98a5de7d75f543bfaa6fa706f76d1af5";
 
         private static readonly List<VisualFeatureTypes> Features =
             new List<VisualFeatureTypes>()
@@ -62,7 +62,7 @@ namespace ComputerVisionTest
         {
             _currentIndex = _currentIndex <= 0 ? ImagePathList.Count - 1 : _currentIndex - 1;
             ImageBox.Source = new BitmapImage(new Uri(ImagePathList[_currentIndex]));
-            AnalyzeImage();
+            //AnalyzeImage();
             MakeAnalysisRequest();
         }
 
@@ -70,7 +70,7 @@ namespace ComputerVisionTest
         {
             Tb1.Text = string.Empty;
             var computerVision = new ComputerVisionClient(new ApiKeyServiceClientCredentials(ComputerVisionSubscriptionKey));
-            computerVision.Endpoint = "https://chinaeast2.api.cognitive.azure.cn/";
+            computerVision.Endpoint = "https://westcentralus.api.cognitive.microsoft.com/";
             await AnalyzeLocalAsync(computerVision, ImagePathList[_currentIndex]);
         }
 
@@ -103,7 +103,7 @@ namespace ComputerVisionTest
             client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", FaceSubscriptionKey);
 
             string queryString = "returnFaceId=true&returnFaceLandmarks=false&returnFaceAttributes=age,gender";
-            string uri = "https://chinaeast2.api.cognitive.azure.cn/face/v1.0/detect?" + queryString;
+            string uri = "https://westcentralus.api.cognitive.microsoft.com/face/v1.0/detect?" + queryString;
 
             string responseContent;
 
