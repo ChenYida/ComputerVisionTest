@@ -23,8 +23,8 @@ namespace ComputerVisionTest
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const string ComputerVisionSubscriptionKey = "efd6e3afc73a4a16aefd3b3a52369e03";
-        private const string FaceSubscriptionKey = "98a5de7d75f543bfaa6fa706f76d1af5";
+        private const string ComputerVisionSubscriptionKey = "a02975dd420b4895992ed0fa2c2d541e";
+        private const string FaceSubscriptionKey = "026fa14df9c64b80b7cc4ec60e1b883d";
 
         private static readonly List<VisualFeatureTypes> Features =
             new List<VisualFeatureTypes>()
@@ -70,7 +70,7 @@ namespace ComputerVisionTest
         {
             Tb1.Text = string.Empty;
             var computerVision = new ComputerVisionClient(new ApiKeyServiceClientCredentials(ComputerVisionSubscriptionKey));
-            computerVision.Endpoint = "https://westcentralus.api.cognitive.microsoft.com/";
+            computerVision.Endpoint = "https://computervisioncyd.cognitiveservices.azure.com/";
             await AnalyzeLocalAsync(computerVision, ImagePathList[_currentIndex]);
         }
 
@@ -103,7 +103,7 @@ namespace ComputerVisionTest
             client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", FaceSubscriptionKey);
 
             string queryString = "returnFaceId=true&returnFaceLandmarks=false&returnFaceAttributes=age,gender";
-            string uri = "https://westcentralus.api.cognitive.microsoft.com/face/v1.0/detect?" + queryString;
+            string uri = "https://facecyd.cognitiveservices.azure.com/face/v1.0/detect?" + queryString;
 
             string responseContent;
 
